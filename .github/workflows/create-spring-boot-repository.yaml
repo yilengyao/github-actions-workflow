@@ -19,7 +19,13 @@ on:
       artifactId:
         description: 'Maven Artifact ID'
         required: true
-
+      userName:
+        description: 'User Name'
+        required: true
+      userEmail:
+        description: 'User Email'
+        required: true
+        
 jobs:
   create-spring-boot-repository:
     runs-on: ubuntu-latest
@@ -52,6 +58,8 @@ jobs:
       run: |
         cd spring-boot-project
         echo "# ${{  github.event.inputs.name }}" >> README.md
+        git config user.email "${{ github.event.inputs.userEmail }}"
+        git config user.name "${{ github.event.inputs.userName }}"
         git init
         git add .
         git add README.md
