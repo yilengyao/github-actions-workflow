@@ -66,6 +66,7 @@ jobs:
         git commit -m "first commit"
         git branch -M main
         git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.name }}.git
+        git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.event.inputs.name }}
         git push -u origin main  # Push to 'main' branch
       env:
         GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
