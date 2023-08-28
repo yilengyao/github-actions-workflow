@@ -19,6 +19,20 @@ on:
       artifactId:
         description: 'Maven Artifact ID'
         required: true
+      springBootVersion:
+        description: 'Spring Boot Version'
+        required: true
+        default: '3.0.0'
+      mainClassName:
+        description: 'Main Class Name'
+        required: true
+        default: 'Application'
+      userName:
+        description: 'User Name'
+        required: true
+      userEmail:
+        description: 'User Email'
+        required: true
         
 jobs:
   create-spring-boot-repository:
@@ -32,8 +46,10 @@ jobs:
       run: |
         curl https://start.spring.io/starter.zip -o project.zip \
              -d type=maven-project \
+             -d bootVersion=${{ github.event.inputs.springBootVersion }} \
              -d groupId=${{ github.event.inputs.groupId }} \
-             -d artifactId=${{ github.event.inputs.artifactId }}
+             -d artifactId=${{ github.event.inputs.artifactId }} \
+             -d name=${{ github.event.inputs.mainClassName }}
         unzip project.zip -d spring-boot-project
         cd spring-boot-project
         mvn wrapper:wrapper
@@ -52,6 +68,8 @@ jobs:
       run: |
         cd spring-boot-project
         echo "# ${{  github.event.inputs.name }}" >> README.md
+        git config --global user.email "${{ github.event.inputs.userEmail }}"
+        git config --global user.name "${{ github.event.inputs.userName }}"
         git init
         git add .
         git add README.md
