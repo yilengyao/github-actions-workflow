@@ -59,10 +59,11 @@ jobs:
         cd spring-boot-project
         git config --local user.email "${{ github.event.inputs.userEmail }}"
         git config --local user.name "${{ github.event.inputs.userName }}"
+        git config --local init.defaultBranch main  # This sets the default branch name to 'main'
         git init
         git add .
         git commit -m "Initial commit"
         git remote add origin https://github.com/${{ github.actor }}/${{ github.event.inputs.name }}.git
-        git push -u origin master
+        git push -u origin main  # Push to 'main' branch
       env:
         GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
