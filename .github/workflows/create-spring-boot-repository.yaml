@@ -1,0 +1,59 @@
+name: Create Spring Boot Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Repository Name'
+        required: true
+      description:
+        description: 'Repository Description'
+        required: true
+      private:
+        description: 'Private Repository'
+        required: true
+        default: 'false'
+      groupId:
+        description: 'Maven Group ID'
+        required: true
+      artifactId:
+        description: 'Maven Artifact ID'
+        required: true
+
+jobs:
+  create-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Step 1 - Checkout code
+      uses: actions/checkout@v2
+
+    - name:  Step 2 - Generate Spring Boot Project with Maven Wrapper
+      run: |
+        curl https://start.spring.io/starter.zip -o project.zip \
+             -d type=maven-project \
+             -d groupId=${{ github.event.inputs.groupId }} \
+             -d artifactId=${{ github.event.inputs.artifactId }}
+        unzip project.zip -d spring-boot-project
+        cd spring-boot-project
+        mvn wrapper:wrapper
+
+    - name: Step 3 - Create new GitHub repository
+      run: |
+        curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
+             -d '{
+                  "name": "${{ github.event.inputs.name }}",
+                  "description": "${{ github.event.inputs.description }}",
+                  "private": ${{ github.event.inputs.private }}
+                }' \
+             https://api.github.com/user/repos
+
+    - name: Step 4 - Push to new repository
+      run: |
+        git init
+        git add .
+        git commit -m "Initial commit"
+        git remote add origin https://github.com/${{ github.actor }}/${{ github.event.inputs.name }}.git
+        git push -u origin master
+      env:
+        GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
