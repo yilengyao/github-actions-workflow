@@ -19,6 +19,12 @@ on:
       artifactId:
         description: 'Maven Artifact ID'
         required: true
+      userName:
+        description: 'User Name'
+        required: true
+      userEmail:
+        description: 'User Email'
+        required: true
 
 jobs:
   create-spring-boot-repository:
@@ -26,7 +32,7 @@ jobs:
 
     steps:
     - name: Step 1 - Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name:  Step 2 - Generate Spring Boot Project with Maven Wrapper
       run: |
@@ -50,6 +56,9 @@ jobs:
 
     - name: Step 4 - Push to new repository
       run: |
+        cd spring-boot-project
+        git config --local user.email "${{ github.event.inputs.userEmail }}"
+        git config --local user.name "${{ github.event.inputs.userName }}"
         git init
         git add .
         git commit -m "Initial commit"
