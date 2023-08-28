@@ -58,8 +58,8 @@ jobs:
       run: |
         cd spring-boot-project
         echo "# ${{  github.event.inputs.name }}" >> README.md
-        git config user.email "${{ github.event.inputs.userEmail }}"
-        git config user.name "${{ github.event.inputs.userName }}"
+        git config --global user.email "${{ github.event.inputs.userEmail }}"
+        git config --global user.name "${{ github.event.inputs.userName }}"
         git init
         git add .
         git add README.md
