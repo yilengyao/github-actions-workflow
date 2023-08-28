@@ -21,7 +21,7 @@ on:
         required: true
 
 jobs:
-  create-repo:
+  create-spring-boot-repository:
     runs-on: ubuntu-latest
 
     steps:
