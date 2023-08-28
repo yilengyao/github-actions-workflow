@@ -51,12 +51,13 @@ jobs:
     - name: Step 4 - Push to new repository
       run: |
         cd spring-boot-project
+        echo "# ${{  github.event.inputs.name }}" >> README.md
         git init
         git add .
         git add README.md
         git commit -m "first commit"
         git branch -M main
-        git remote add origin https://github.com/${{ github.actor }}/${{ github.event.inputs.name }}.git
+        git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.name }}.git
         git push -u origin main  # Push to 'main' branch
       env:
         GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
