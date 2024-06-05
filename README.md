@@ -14,7 +14,7 @@ Provide a `Token name`, set an `Expiration` date, for `Repository access` select
 
 For `Permissions` you need to set `Read and Write` access for
 
-Administration
+- Administration
 - Contents
 - Secrets
 - Workflows
