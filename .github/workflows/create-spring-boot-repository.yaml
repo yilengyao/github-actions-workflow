@@ -23,6 +23,10 @@ on:
         description: 'Spring Boot Version'
         required: true
         default: '3.0.0'
+      javaVersion:
+        description: 'Java Version'
+        required: true
+        default: '17'
       mainClassName:
         description: 'Main Class Name'
         required: true
@@ -47,6 +51,7 @@ jobs:
         curl https://start.spring.io/starter.zip -o project.zip \
              -d type=maven-project \
              -d bootVersion=${{ github.event.inputs.springBootVersion }} \
+             -d javaVersion=${{ github.event.inputs.javaVersion }} \
              -d groupId=${{ github.event.inputs.groupId }} \
              -d artifactId=${{ github.event.inputs.artifactId }} \
              -d name=${{ github.event.inputs.mainClassName }}
