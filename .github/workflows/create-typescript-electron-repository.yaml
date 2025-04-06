@@ -56,6 +56,22 @@ jobs:
         cd "${{ github.event.inputs.repo_name }}"
         npm install --save-dev typescript @types/node electron-typescript-definitions copyfiles nodemon
         
+        # Install js-to-ts-converter without saving to package.json
+        npm install js-to-ts-converter --no-save
+        
+        # Rename index.js to main.js if it exists
+        if [ -f "src/index.js" ]; then
+          mv src/index.js src/main.js
+          echo "Renamed src/index.js to src/main.js"
+          
+          # Update any references to index.js in other files
+          find src -type f -not -name "main.js" -exec sed -i 's/index\.js/main.js/g' {} \;
+        fi
+        
+        # Convert JS files to TS
+        echo "Converting JavaScript files to TypeScript..."
+        npx js-to-ts-converter src
+                
         # Create custom tsconfig.json
         cat > tsconfig.json << EOF
         {
@@ -87,6 +103,9 @@ jobs:
         
         // Update description
         packageJson.description = "${{ github.event.inputs.description }}";
+        
+        // Update main entry point
+        packageJson.main = "dist/main.js";
         
         // Update scripts
         packageJson.scripts = {
