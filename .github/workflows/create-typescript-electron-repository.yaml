@@ -1,0 +1,129 @@
+name: Create TypeScript Electron Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Repository name'
+        required: true
+      description:
+        description: 'Repository description'
+        required: false
+        default: 'An Electron application built with TypeScript'
+      author_name:
+        description: 'Author name'
+        required: true
+      author_email:
+        description: 'Author email'
+        required: true
+      ts_target:
+        description: 'TypeScript target'
+        required: false
+        default: 'ES2024'
+      ts_module:
+        description: 'TypeScript module system'
+        required: false
+        default: 'CommonJS'
+      ts_module_resolution:
+        description: 'TypeScript module resolution'
+        required: false
+        default: 'node'
+      private:
+        description: 'Private repository'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  create-electron-repository:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Step 1 - Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Step 2 - Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        
+    - name: Step 3 - Generate Electron application
+      run: |
+        # Create Electron TypeScript project
+        npx create-electron-app "${{ github.event.inputs.repo_name }}" --template=typescript
+        
+        # Install additional dependencies
+        cd "${{ github.event.inputs.repo_name }}"
+        npm install --save-dev typescript @types/node electron-typescript-definitions copyfiles nodemon
+        
+        # Create custom tsconfig.json
+        cat > tsconfig.json << EOF
+        {
+          "compilerOptions": {
+            "target": "${{ github.event.inputs.ts_target }}",
+            "module": "${{ github.event.inputs.ts_module }}",
+            "moduleResolution": "${{ github.event.inputs.ts_module_resolution }}",
+            "outDir": "./dist",
+            "rootDir": "./src",
+            "strict": true,
+            "esModuleInterop": true,
+            "sourceMap": true,
+            "baseUrl": "."
+          },
+          "include": ["src/**/*"]
+        }
+        EOF
+        
+        # Modify package.json
+        cat > update_package.js << 'EOF'
+        const fs = require('fs');
+        const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+        
+        // Update author information
+        packageJson.author = {
+          name: "${{ github.event.inputs.author_name }}",
+          email: "${{ github.event.inputs.author_email }}"
+        };
+        
+        // Update description
+        packageJson.description = "${{ github.event.inputs.description }}";
+        
+        // Update scripts
+        packageJson.scripts = {
+          ...packageJson.scripts,
+          "build": "tsc && copyfiles -u 1 src/**/*.html src/**/*.css src/assets/** dist/",
+          "watch": "tsc -w",
+          "start": "npm run build && electron-forge start",
+          "dev": "nodemon --exec \"npm run build && electron-forge start\" --watch src --ext ts,tsx,html,css"
+        };
+        
+        fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
+        EOF
+        
+        node update_package.js
+        rm update_package.js
+
+    - name: Step 4 - Create new GitHub repository
+      run: |
+        curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
+             -d '{
+                  "name": "${{ github.event.inputs.repo_name }}",
+                  "description": "${{ github.event.inputs.description }}",
+                  "private": ${{ github.event.inputs.private }}
+                }' \
+             https://api.github.com/user/repos
+
+    - name: Step 5 - Push to new repository
+      run: |
+        cd "${{ github.event.inputs.repo_name }}"
+        git config --global user.email "${{ github.event.inputs.author_email }}"
+        git config --global user.name "${{ github.event.inputs.author_name }}"
+        git init
+        git add .
+        git commit -m "Initialize Electron TypeScript project"
+        git branch -M main
+        git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.repo_name }}.git
+        git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.repo_name }}
+        git push -u origin main
+      env:
+        GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
