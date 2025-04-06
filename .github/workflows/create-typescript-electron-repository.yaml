@@ -50,7 +50,7 @@ jobs:
     - name: Step 3 - Generate Electron application
       run: |
         # Create Electron TypeScript project
-        npx create-electron-app "${{ github.event.inputs.repo_name }}" --template=typescript
+        npx create-electron-app "${{ github.event.inputs.repo_name }}"
         
         # Install additional dependencies
         cd "${{ github.event.inputs.repo_name }}"
