@@ -28,6 +28,11 @@ on:
         description: 'TypeScript module resolution'
         required: false
         default: 'node'
+      private:
+        description: 'Private repository'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   create-electron-repository:
@@ -102,7 +107,7 @@ jobs:
       run: |
         curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
              -d '{
-                  "name": "${{ github.event.inputs.name }}",
+                  "name": "${{ github.event.inputs.repo_name }}",
                   "description": "${{ github.event.inputs.description }}",
                   "private": ${{ github.event.inputs.private }}
                 }' \
@@ -110,17 +115,15 @@ jobs:
 
     - name: Step 5 - Push to new repository
       run: |
-        cd spring-boot-project
-        echo "# ${{  github.event.inputs.name }}" >> README.md
-        git config --global user.email "${{ github.event.inputs.userEmail }}"
-        git config --global user.name "${{ github.event.inputs.userName }}"
+        cd "${{ github.event.inputs.repo_name }}"
+        git config --global user.email "${{ github.event.inputs.author_email }}"
+        git config --global user.name "${{ github.event.inputs.author_name }}"
         git init
         git add .
-        git add README.md
-        git commit -m "first commit"
+        git commit -m "Initialize Electron TypeScript project"
         git branch -M main
-        git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.name }}.git
-        git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.name }}
-        git push -u origin main  # Push to 'main' branch
+        git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.repo_name }}.git
+        git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.repo_name }}
+        git push -u origin main
       env:
         GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
