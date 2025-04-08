@@ -202,15 +202,15 @@ jobs:
         cat > tsconfig.json << 'EOF'
         {
           "compilerOptions": {
-            "target": "ES2021",
-            "module": "commonjs",
+            "target": "${{ github.event.inputs.ts_target }}",
+            "module": "${{ github.event.inputs.ts_module }}",
             "esModuleInterop": true
           },
           "include": ["src/**/*"]
         }
         EOF
         
-        # Update forge.config.js to use TypeScript files
+        # Update forge.config.js to use TypeScript files and add fuses plugin
         cat > update_forge_config.js << 'EOF'
         const fs = require('fs');
         const forgeConfig = require('./forge.config.js');
@@ -233,6 +233,35 @@ jobs:
             ];
           }
         }
+        
+        // Add the fuses plugin if it doesn't already exist
+        if (!forgeConfig.plugins.some(plugin => plugin.name === '@electron-forge/plugin-fuses')) {
+          forgeConfig.plugins.push({
+            "name": "@electron-forge/plugin-fuses",
+            "config": {
+              "version": 1,
+              "fuses": {
+                "runAsNode": false,
+                "enableNodeCliInspectArguments": true,
+                "enableEmbeddedAsarIntegrityValidation": false,
+                "onlyLoadAppFromAsar": false,
+                "loadBrowserProcessSpecificV8Snapshot": true,
+                "enableCookieEncryption": true
+              }
+            }
+          });
+        }
+
+        // White listed plugins
+        whitelist_plugin_names = [
+          "@electron-forge/plugin-auto-unpack-natives",
+          "@electron-forge/plugin-webpack",
+          "@electron-forge/plugin-fuses"
+        ];
+
+        // Remove any plugins that are not in the whitelist
+        forgeConfig.plugins = forgeConfig.plugins.filter(plugin => 
+          whitelist_plugin_names.includes(plugin.name));
         
         fs.writeFileSync('./forge.config.js', 
           `module.exports = ${JSON.stringify(forgeConfig, null, 2)}`);
