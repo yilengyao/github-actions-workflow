@@ -322,8 +322,17 @@ jobs:
             ;;
         esac
         
+        # Convert repo name to lowercase for compatibility with electron-vite
+        REPO_NAME_LOWER=$(echo "${{ github.event.inputs.repo_name }}" | tr '[:upper:]' '[:lower:]')
+
         # Create Electron app with selected template
-        npm create @quick-start/electron "${{ github.event.inputs.repo_name }}" -- --template $TEMPLATE
+        npm create @quick-start/electron "$REPO_NAME_LOWER" -- --template $TEMPLATE --skip
+
+        # If repo name is different than lowercase version, rename directory
+        if [ "$REPO_NAME_LOWER" != "${{ github.event.inputs.repo_name }}" ]; then
+          mv "$REPO_NAME_LOWER" "${{ github.event.inputs.repo_name }}"
+        fi
+
         cd "${{ github.event.inputs.repo_name }}"
         
         # Update package.json with metadata
