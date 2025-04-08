@@ -16,6 +16,14 @@ on:
       author_email:
         description: 'Author email'
         required: true
+      build_tool:
+        description: 'Choose Your Build Tool'
+        required: true
+        type: choice
+        options:
+          - electron-with-typescript
+          - electron-forge-with-webpack
+        default: 'electron-with-typescript'
       ts_target:
         description: 'TypeScript target'
         required: false
@@ -47,7 +55,8 @@ jobs:
       with:
         node-version: '18.x'
         
-    - name: Step 3 - Generate Electron application
+    - name: Step 3 - Generate Electron with TypeScript
+      if: ${{ github.event.inputs.build_tool == 'electron-with-typescript' || github.event.inputs.build_tool == '' }}
       run: |
         # Create Electron TypeScript project
         npx create-electron-app "${{ github.event.inputs.repo_name }}"
@@ -122,6 +131,147 @@ jobs:
         node update_package.js
         rm update_package.js
 
+    - name: Step 3b - Generate Electron with Forge and Webpack
+      if: ${{ github.event.inputs.build_tool == 'electron-forge-with-webpack' }}
+      run: |
+        # Create Electron app with webpack template
+        npx create-electron-app "${{ github.event.inputs.repo_name }}" --template=webpack
+        cd "${{ github.event.inputs.repo_name }}"
+        
+        # Install TypeScript and related dependencies
+        npm install --save-dev typescript ts-loader
+        npm install --save-dev style-loader css-loader
+        npm install --save-dev sass sass-loader
+        
+        # Install js-to-ts-converter without saving to package.json
+        npm install js-to-ts-converter --no-save
+        
+        # Convert JS files to TS
+        npx js-to-ts-converter src
+        
+        # Update webpack.main.config.js for TypeScript
+        cat > webpack.main.config.js << 'EOF'
+        module.exports = {
+          entry: './src/main.ts',
+          module: {
+            rules: [
+              {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+              },
+            ],
+          },
+          resolve: {
+            extensions: ['.tsx', '.ts', '.js'],
+          },
+        };
+        EOF
+        
+        # Update webpack.renderer.config.js for TypeScript and CSS
+        cat > webpack.renderer.config.js << 'EOF'
+        module.exports = {
+          module: {
+            rules: [
+              {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+              },
+              {
+                test: /\.s[ac]ss$/i,
+                use: ['style-loader', 'css-loader', 'sass-loader'],
+              },
+              {
+                test: /\.css$/i,
+                use: ['style-loader', 'css-loader'],
+              },
+              {
+                test: /\.(png|svg|jpg|jpeg|gif)$/i,
+                type: 'asset/resource',
+              },
+            ],
+          },
+          resolve: {
+            extensions: ['.tsx', '.ts', '.js'],
+          },
+        };
+        EOF
+        
+        # Create a basic tsconfig.json
+        cat > tsconfig.json << 'EOF'
+        {
+          "compilerOptions": {
+            "target": "ES2021",
+            "module": "commonjs",
+            "esModuleInterop": true
+          },
+          "include": ["src/**/*"]
+        }
+        EOF
+        
+        # Update forge.config.js to use TypeScript files
+        cat > update_forge_config.js << 'EOF'
+        const fs = require('fs');
+        const forgeConfig = require('./forge.config.js');
+        
+        // Update entry points to use TypeScript files
+        if (forgeConfig.plugins && forgeConfig.plugins.length > 0) {
+          const webpackPlugin = forgeConfig.plugins.find(plugin => 
+            plugin.name === '@electron-forge/plugin-webpack');
+            
+          if (webpackPlugin && webpackPlugin.config && webpackPlugin.config.mainConfig) {
+            webpackPlugin.config.renderer.entryPoints = [
+              {
+                name: 'main_window',
+                html: './src/index.html',
+                js: './src/renderer.ts',
+                preload: {
+                  js: './src/preload.ts',
+                },
+              },
+            ];
+          }
+        }
+        
+        fs.writeFileSync('./forge.config.js', 
+          `module.exports = ${JSON.stringify(forgeConfig, null, 2)}`);
+        EOF
+        
+        node update_forge_config.js
+        rm update_forge_config.js
+        
+        # Add TypeScript declarations in main.ts
+        echo "// TypeScript declarations for Electron Forge Webpack" > src/declarations.d.ts
+        echo "declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;" >> src/declarations.d.ts
+        echo "declare const MAIN_WINDOW_WEBPACK_ENTRY: string;" >> src/declarations.d.ts
+        
+        # Update main.ts to import declarations
+        sed -i '1i/// <reference path="./declarations.d.ts" />' src/main.ts
+        
+        # Modify package.json
+        cat > update_package.js << 'EOF'
+        const fs = require('fs');
+        const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+        
+        // Update author information
+        packageJson.author = {
+          name: "${{ github.event.inputs.author_name }}",
+          email: "${{ github.event.inputs.author_email }}"
+        };
+        
+        // Update description
+        packageJson.description = "${{ github.event.inputs.description }}";
+        
+        // For webpack template, we don't need to update main entry point or scripts
+        // as they are already correctly configured by the template
+        
+        fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
+        EOF
+        
+        node update_package.js
+        rm update_package.js
+
     - name: Step 4 - Create new GitHub repository
       run: |
         curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
@@ -139,7 +289,7 @@ jobs:
         git config --global user.name "${{ github.event.inputs.author_name }}"
         git init
         git add .
-        git commit -m "Initialize Electron TypeScript project"
+        git commit -m "Initialize Electron project with ${{ github.event.inputs.build_tool }}"
         git branch -M main
         git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.repo_name }}.git
         git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.repo_name }}
