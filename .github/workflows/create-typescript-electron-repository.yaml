@@ -23,7 +23,10 @@ on:
         options:
           - electron-with-typescript
           - electron-forge-with-webpack
-        default: 'electron-with-typescript'
+          - vite-ts
+          - vite-react-ts
+          - vite-vue-ts
+        default: 'vite-ts'
       ts_target:
         description: 'TypeScript target'
         required: false
@@ -299,6 +302,41 @@ jobs:
         fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
         EOF
         
+        node update_package.js
+        rm update_package.js
+
+    - name: Step 3c - Generate Electron with Vite
+      if: ${{ startsWith(github.event.inputs.build_tool, 'vite-') }}
+      run: |
+        # Determine template based on build_tool selection
+        TEMPLATE=""
+        case "${{ github.event.inputs.build_tool }}" in
+          "vite-ts")
+            TEMPLATE="vanilla-ts"
+            ;;
+          "vite-react-ts")
+            TEMPLATE="react-ts"
+            ;;
+          "vite-vue-ts")
+            TEMPLATE="vue-ts"
+            ;;
+        esac
+        
+        # Create Electron app with selected template
+        npm create @quick-start/electron "${{ github.event.inputs.repo_name }}" -- --template $TEMPLATE
+        cd "${{ github.event.inputs.repo_name }}"
+        
+        # Update package.json with metadata
+        cat > update_package.js << 'EOF'
+        const fs = require('fs');
+        const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+        packageJson.author = {
+          name: "${{ github.event.inputs.author_name }}",
+          email: "${{ github.event.inputs.author_email }}"
+        };
+        packageJson.description = "${{ github.event.inputs.description }}";
+        fs.writeFileSync('./package.json', JSON.stringify(packageJson, null, 2));
+        EOF
         node update_package.js
         rm update_package.js
 
