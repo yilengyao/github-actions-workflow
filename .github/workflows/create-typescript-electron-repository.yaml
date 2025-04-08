@@ -142,6 +142,7 @@ jobs:
         npm install --save-dev typescript ts-loader
         npm install --save-dev style-loader css-loader
         npm install --save-dev sass sass-loader
+        npm install --save-dev electron-forge
         
         # Install js-to-ts-converter without saving to package.json
         npm install js-to-ts-converter --no-save
