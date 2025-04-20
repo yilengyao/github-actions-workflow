@@ -50,7 +50,7 @@ jobs:
         run: |
           curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
             -d '{
-                  "name": "${{ github.event.inputs.repo_name }}",
+                  "name": "${{ github.event.inputs.app_name }}",
                   "description": "${{ github.event.inputs.description }}",
                   "private": ${{ github.event.inputs.private }}
                 }' \
