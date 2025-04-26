@@ -40,11 +40,12 @@ jobs:
           
       - name: Scaffold TypeScript library
         run: |
+          export npm_config_init_author_name="${{ github.event.inputs.author_name }}"
+          export npm_config_init_author_email="${{ github.event.inputs.author_email }}"
           npx tsdx create "${{ github.event.inputs.repo_name }}" --template basic --y
           cd "${{ github.event.inputs.repo_name }}"
           npm pkg set name="${{ github.event.inputs.package_name }}"
           npm pkg set description="${{ github.event.inputs.description }}"
-          npm pkg set author="${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>"
           npm install
       
       - name: Create new GitHub repository
