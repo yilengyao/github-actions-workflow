@@ -40,7 +40,7 @@ jobs:
           
       - name: Scaffold TypeScript library
         run: |
-          npx create-ts-fast@latest "{{ github.event.inputs.package_name }}" -- --template universal
+          npx create-ts-fast@latest "${{ github.event.inputs.package_name }}" -- --template universal
           cd "${{ github.event.inputs.repo_name }}"
           npm pkg set name="${{ github.event.inputs.package_name }}"
           npm pkg set author="${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>"
