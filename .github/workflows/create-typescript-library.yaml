@@ -1,0 +1,73 @@
+name: Create TypeScript Library Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Name of the GitHub repository'
+        required: true
+        type: string
+      package_name:
+        description: 'Name of the TypeScript library'
+        required: true
+        type: string
+      description:
+        description: 'Repository description'
+        required: false
+        default: 'A TypeScript library for LLM clients'
+      author_name:
+        description: 'Author name'
+        required: true
+        type: string
+      author_email:
+        description: 'Author email'
+        required: true
+        type: string
+      private:
+        description: 'Private repository'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  create-typescript-library:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          
+      - name: Scaffold TypeScript library
+        run: |
+          npx tsdx create "${{ github.event.inputs.repo_name }}" --template ts --yes
+          cd "${{ github.event.inputs.repo_name }}"
+          npm pkg set name="${{ github.event.inputs.package_name }}"
+          npm pkg set description="${{ github.event.inputs.description }}"
+          npm pkg set author="${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>"
+          npm install
+      
+      - name: Create new GitHub repository
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
+            -d '{
+                  "name": "${{ github.event.inputs.repo_name }}",
+                  "description": "${{ github.event.inputs.description }}",
+                  "private": ${{ github.event.inputs.private }}
+                }' \
+            https://api.github.com/user/repos
+
+      - name: Push to new repository
+        run: |
+          cd "${{ github.event.inputs.repo_name }}"
+          git config --global user.email "${{ github.event.inputs.author_email }}"
+          git config --global user.name "${{ github.event.inputs.author_name }}"
+          git init
+          git add .
+          git commit -m "Initialize TypeScript library with tsdx"
+          git branch -M main
+          git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.repo_name }}.git
+          git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.repo_name }}
+          git push -u origin main
+        env:
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
