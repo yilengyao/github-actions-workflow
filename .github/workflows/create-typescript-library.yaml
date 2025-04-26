@@ -40,7 +40,7 @@ jobs:
           
       - name: Scaffold TypeScript library
         run: |
-          npx tsdx create "${{ github.event.inputs.repo_name }}" --template ts --yes
+          npx tsdx create "${{ github.event.inputs.repo_name }}" --template basic --y
           cd "${{ github.event.inputs.repo_name }}"
           npm pkg set name="${{ github.event.inputs.package_name }}"
           npm pkg set description="${{ github.event.inputs.description }}"
