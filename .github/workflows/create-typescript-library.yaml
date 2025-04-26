@@ -39,14 +39,12 @@ jobs:
           node-version: '18.x'
           
       - name: Scaffold TypeScript library
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
         run: |
-          npx create-ts-fast@latest "{{ github.event.inputs.package_name }}"  -- --template universal
+          npx create-ts-fast@latest "{{ github.event.inputs.package_name }}" -- --template universal
           cd "${{ github.event.inputs.repo_name }}"
           npm pkg set name="${{ github.event.inputs.package_name }}"
-          npm pkg set author="${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>"          npm pkg set license="InnoBridge"
+          npm pkg set author="${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>"
+          npm pkg set license="InnoBridge"
           npm pkg set description="${{ github.event.inputs.description }}"
           npm install
       
