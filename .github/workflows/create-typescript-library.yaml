@@ -40,12 +40,19 @@ jobs:
           
       - name: Scaffold TypeScript library
         run: |
-          npx create-ts-fast@latest "${{ github.event.inputs.repo_name }}" -- --template universal --yes
+          # Non-interactive copy of your template
+          npx degit yilengyao/create-ts-fast-template "${{ github.event.inputs.repo_name }}"
+          
+          # Enter the new project
           cd "${{ github.event.inputs.repo_name }}"
+
+          # Replace package.json metadata
           npm pkg set name="${{ github.event.inputs.package_name }}"
           npm pkg set author="${{ github.event.inputs.author_name }} <${{ github.event.inputs.author_email }}>"
-          npm pkg set license="InnoBridge"
           npm pkg set description="${{ github.event.inputs.description }}"
+          npm pkg set license="InnoBridge"
+
+          # Install its dependencies (tsup, vitest, etc.)
           npm install
       
       - name: Create new GitHub repository
