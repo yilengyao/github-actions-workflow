@@ -74,7 +74,7 @@ jobs:
         run: |
           curl -X POST -H "Authorization: token ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}" \
             -d '{
-                  "name": "${{ github.event.inputs.app_name }}",
+                  "name": "${{ github.event.inputs.repo_name }}",
                   "description": "${{ github.event.inputs.description }}",
                   "private": ${{ github.event.inputs.private }}
                 }' \
@@ -82,15 +82,15 @@ jobs:
 
       - name: Push to new repository
         run: |
-          cd "${{ github.event.inputs.app_name }}"
+          cd "${{ github.event.inputs.repo_name }}"
           git config --global user.email "${{ github.event.inputs.author_email }}"
           git config --global user.name "${{ github.event.inputs.author_name }}"
           git init
           git add .
           git commit -m "Initialize Node.js backend with Express and TypeScript"
           git branch -M main
-          git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.app_name }}.git
-          git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.app_name }}
+          git remote add origin git@github.com:${{ github.actor }}/${{ github.event.inputs.repo_name }}.git
+          git remote set-url origin https://x-access-token:${{ env.GH_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.actor }}/${{ github.event.inputs.repo_name }}
           git push -u origin main
         env:
           GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
