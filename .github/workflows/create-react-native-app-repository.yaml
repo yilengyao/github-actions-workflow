@@ -53,6 +53,7 @@ jobs:
           git config --global user.email "${{ github.event.inputs.author_email }}"
           git config --global user.name "${{ github.event.inputs.author_name }}"
           git init
+          echo 'eas.json' >> .gitignore
           git add .
           git commit -m "Initialize React Native app with Expo"
           git branch -M main
